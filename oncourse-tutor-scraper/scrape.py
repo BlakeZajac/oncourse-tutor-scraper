@@ -128,14 +128,14 @@ def main():
         tutor_urls = tutor_urls[:args.limit]
         print(f"Limited to first {args.limit} URLs for testing")
     
-    # Process each tutor URL and collect data
+        # Process each tutor URL and collect data
     print(f"Processing {len(tutor_urls)} tutor URLs")
     tutors_data = []
-    for url in tutor_urls:
-        print(f"Processing {url}")
+    for idx, url in enumerate(tutor_urls, 1):
+        print(f"Processing {idx} of {len(tutor_urls)}: {url}")
         tutor_data = scrape_tutor_page(url)  # Capture all returned values
         tutors_data.append(tutor_data)
-        print(f"Processed content for {tutor_data[1]}")  # Index 1 is the title
+        print(f"Processed content for {url}")
     
     # Save all data to CSV
     csv_path = save_to_csv(tutors_data, output_dir)
