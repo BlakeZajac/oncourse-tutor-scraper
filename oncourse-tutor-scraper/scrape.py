@@ -23,8 +23,20 @@ def get_tutor_urls_from_sitemap(sitemap_url):
 def scrape_tutor_page(url):
     # Add 5 seconds delay to be considerate to the server
     time.sleep(5)
+
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()  # Raises an HTTPError for bad responses
+            break  # If successful, break out of retry loop
+        except requests.exceptions.RequestException as e:
+            if attempt == max_retries - 1:  # Last attempt
+                print(f"Failed to fetch {url} after {max_retries} attempts: {e}")
+                return (url, f"tutor_{url.split('/')[-1]}", "Failed to fetch content", "", "", "", "", "")
+            print(f"Attempt {attempt + 1} failed, retrying after 10 seconds...")
+            time.sleep(10)  # Wait longer between retries
     
-    response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     
     try:
