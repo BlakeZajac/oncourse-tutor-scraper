@@ -21,8 +21,8 @@ def get_tutor_urls_from_sitemap(sitemap_url):
     return tutor_urls
 
 def scrape_tutor_page(url):
-    # Add 4 seconds delay to be considerate to the server
-    time.sleep(4)
+    # Add 5 seconds delay to be considerate to the server
+    time.sleep(5)
     
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
