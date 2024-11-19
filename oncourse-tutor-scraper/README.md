@@ -19,24 +19,6 @@ pip install requests beautifulsoup4
 
 ## Usage
 
-### Creating Tutor Index
-
-To create an index of all tutors:
-
-```bash
-python index.py
-```
-
-With a limit (for testing):
-
-```bash
-python index.py --limit 5
-```
-
-This will create `data/tutor_index.csv` containing tutor names and URLs.
-
-### Scraping Tutor Details
-
 To scrape detailed information for all tutors:
 
 ```bash
@@ -48,8 +30,6 @@ With a limit (for testing):
 ```bash
 python scrape.py --limit 5
 ```
-
-This will create `data/tutor_data.csv` containing tutor URLs, titles, and descriptions.
 
 This will create `data/tutors.csv` containing:
 

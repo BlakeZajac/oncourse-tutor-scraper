@@ -28,28 +28,70 @@ def scrape_tutor_page(url):
     soup = BeautifulSoup(response.content, 'html.parser')
     
     try:
-        # Find the specific article tag
-        article = soup.find('article', id='content')
-        if not article:
-            tutor_number = url.split('/')[-1]
-            return url, f"tutor_{tutor_number}", "Failed to find content article"
+        # Try to get the tutor name first
+        h2 = soup.find('h2')
+        title = h2.text.strip() if h2 else f"tutor_{url.split('/')[-1]}"
         
-        # Get the h2 for tutor name
-        h2 = article.find('h2')
-        if h2:
-            title = h2.text.strip()
-        else:
-            tutor_number = url.split('/')[-1]
-            title = f"tutor_{tutor_number}"
+        # Find the resume details div
+        resume_div = soup.find('div', {'class': 'resume-details', 'itemprop': 'description'})
+        if not resume_div:
+            # Return empty data but with the title if we found it
+            return (url, title, "", "", "", "", "", "")
+        
+        # Remove unwanted elements
+        # Remove Resume heading
+        resume_heading = resume_div.find('h4', string='Resume')
+        if resume_heading:
+            resume_heading.decompose()
             
-        # Get all text content from the article
-        content = article.get_text(separator='\n', strip=True)
+        # Remove return to links paragraph
+        return_p = resume_div.find('p', string=lambda t: t and 'Return to:' in t)
+        if return_p:
+            return_p.decompose()
+            
+        # Remove reserved classes message
+        reserved_p = resume_div.find('p', string=lambda t: t and 'Any classes listed below' in t)
+        if reserved_p:
+            reserved_p.decompose()
         
-        return url, title, content
+        # Extract specific fields
+        fields = {
+            'Teaching': '',
+            'Levels': '',
+            'Ages': '',
+            'Genres': '',
+            'Available': ''
+        }
+        
+        # Find all paragraphs with strong tags
+        for p in resume_div.find_all('p'):
+            for strong in p.find_all('strong'):
+                field = strong.text.strip(':')
+                if field in fields:
+                    # Get the text after the strong tag
+                    value = strong.next_sibling
+                    if value:
+                        fields[field] = value.strip()
+                    strong.decompose()  # Remove the field label from content
+        
+        # Get remaining content
+        content = resume_div.get_text(separator='\n', strip=True)
+        
+        # Create CSV row with additional columns
+        return (
+            url, 
+            title, 
+            content,
+            fields['Teaching'],
+            fields['Levels'],
+            fields['Ages'],
+            fields['Genres'],
+            fields['Available']
+        )
     except Exception as e:
         print(f"Error processing {url}: {e}")
         tutor_number = url.split('/')[-1]
-        return url, f"tutor_{tutor_number}", "Failed to extract content"
+        return url, f"tutor_{tutor_number}", "Failed to extract content", "", "", "", "", ""
 
 def save_to_csv(tutors_data, output_dir):
     # Create output directory if it doesn't exist
@@ -61,11 +103,10 @@ def save_to_csv(tutors_data, output_dir):
     # Write to CSV with UTF-8 encoding
     with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
-        # Write headers
-        writer.writerow(['URL', 'Title', 'Description'])
+        # Write headers with new columns
+        writer.writerow(['URL', 'Title', 'Description', 'Teaching', 'Levels', 'Ages', 'Genres', 'Available'])
         # Write tutor data
-        for url, title, content in tutors_data:
-            writer.writerow([url, title, content])
+        writer.writerows(tutors_data)
     
     return csv_path
 
@@ -92,9 +133,9 @@ def main():
     tutors_data = []
     for url in tutor_urls:
         print(f"Processing {url}")
-        url, title, content = scrape_tutor_page(url)
-        tutors_data.append((url, title, content))
-        print(f"Processed content for {title}")
+        tutor_data = scrape_tutor_page(url)  # Capture all returned values
+        tutors_data.append(tutor_data)
+        print(f"Processed content for {tutor_data[1]}")  # Index 1 is the title
     
     # Save all data to CSV
     csv_path = save_to_csv(tutors_data, output_dir)
